@@ -1,0 +1,4 @@
+https://arxiv.org/pdf/1411.2738.pdf
+https://github.com/danielfrg/word2vec
+http://nbviewer.jupyter.org/github/danielfrg/word2vec/blob/master/examples/word2vec.ipynb
+https://deeplearning4j.org/kr/word2vec
