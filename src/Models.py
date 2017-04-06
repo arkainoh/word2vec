@@ -23,6 +23,6 @@ class CBOW:
 		tokens = [i for i in tokens if i.isalpha()]
 		self.voc.add(tokens)
 		self.V = self.voc.size()
-
-
-
+		self.W_i = np.random.rand(self.V, self.N)
+		self.W_o = np.random.rand(self.N, self.V)
+	
