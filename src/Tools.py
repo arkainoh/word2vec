@@ -1,6 +1,9 @@
 import numpy as np
 # implement Softmax, Negative Sampling and other useful functions
 
+def softmax(vec):
+	m = np.max(vec)
+	return np.exp(vec - m) / np.exp(vec - m).sum(axis = 0)
 
 # Set of vocabularies with indices
 class Vocabulary:
@@ -17,6 +20,9 @@ class Vocabulary:
 
 	def size(self):
 		return len(self.vector)
+
+	def at(self, i):
+		return self.vector[] # fix this!
 
 	# vectorize = dict -> numpy.array
 	def vectorize(self, word):
