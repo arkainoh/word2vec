@@ -27,16 +27,23 @@ class CBOW:
         self.W_i = np.random.rand(self.V, self.N)
         self.W_o = np.random.rand(self.N, self.V)
     
-    def train(self):
+    def train(self, learning_rate):
         for i in range(self.V):
-            h = np.transpose(self.W_i[i]) # hidden layer
-            u = np.matmul(h, self.W_o)
-            y = Tools.softmax(u)
-            for j in range(self.V):
-                # update W_o_j
-                t = self.voc.vectorize(self.voc.at(j))
-            # update W_i
 
-test = CBOW(C = 5, N = 5)
+            # h = self.W_i[i]
+            u = np.matmul(self.W_i[i], self.W_o)
+            y = Tools.softmax(u)
+            
+            # update W_o
+            for j in range(self.V):
+                t = self.voc.vectorize(self.voc.at(j))
+                e = y - t
+                self.W_o[:, j] -= learning_rate * e[j] * self.W_i[i]
+            
+            # update W_i
+            EH = np.matmul(e, self.W_o.T)
+            self.W_i[i] -= learning_rate * EH
+
+test = CBOW(C = 5, N = 3)
 test.setTrainingData('test.txt')
-test.train()
+test.train(0.5)
