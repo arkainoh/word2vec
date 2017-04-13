@@ -13,7 +13,7 @@ class Vocabulary:
 
     def add(self, tokens):
         for token in tokens:
-            if token not in self.vector:
+            if token not in self.vector and not token.isspace() and token != '':
                 self.vector[token] = len(self.vector)
 
     def indexOf(self, vocab):
