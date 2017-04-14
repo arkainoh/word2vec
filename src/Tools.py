@@ -3,45 +3,56 @@ import math
 # implement Softmax, Negative Sampling and other useful functions
 
 def softmax(vec):
-	m = np.max(vec)
-	return np.exp(vec - m) / np.exp(vec - m).sum(axis = 0)
+    m = np.max(vec)
+    return np.exp(vec - m) / np.exp(vec - m).sum(axis = 0)
 
 # Set of vocabularies with indices
 class Vocabulary:
-	def __init__(self):
-		self.vector = {}
+    def __init__(self):
+        self.vector = {}
 
-	def add(self, tokens):
-		for token in tokens:
-			if token not in self.vector:
-				self.vector[token] = len(self.vector)
+    def add(self, tokens):
+        for token in tokens:
+            if token not in self.vector and not token.isspace() and token != '':
+                self.vector[token] = len(self.vector)
 
-	def indexOf(self, vocab):
-		return self.vector[vocab]
+    def indexOf(self, vocab):
+        return self.vector[vocab]
 
-	def size(self):
-		return len(self.vector)
+    def size(self):
+        return len(self.vector)
 
-	def at(self, i): # get ith word in the vector
-		return list(self.vector)[i]
+    def at(self, i): # get ith word in the vector
+        return list(self.vector)[i]
 
-	# vectorize = dict -> numpy.array
-	def vectorize(self, word):
-		v = [0 for i in range(self.size())]
-		if word in self.vector:
-			v[self.indexOf(word)] = 1
-		else:
-			print("<ERROR> Word \'" + word + "\' Not Found")
-		return np.array(v)
+    # vectorize = dict -> numpy.array
+    def vectorize(self, word):
+        v = [0 for i in range(self.size())]
+        if word in self.vector:
+            v[self.indexOf(word)] = 1
+        else:
+            print("<ERROR> Word \'" + word + "\' Not Found")
+        return np.array(v)
 
-	def __str__(self):
-		s = "Vocabulary("
-		for word in self.vector:
-			s += (str(self.vector[word]) + ": " + word + ", ")
-		if self.size() != 0:
-			s = s[:-2]
-		s += ")"
-		return s
+    def save(self, filename):
+        f = open(filename, 'w', encoding='utf-8')
+        for word in self.vector:
+            f.write(word + '\n')
+
+    def load(self, filename):
+        f = open(filename, 'r', encoding='utf-8')
+        lines = f.readlines()
+        bow = [i[:-1] for i in lines]
+        self.add(bow)
+
+    def __str__(self):
+        s = "Vocabulary("
+        for word in self.vector:
+            s += (str(self.vector[word]) + ": " + word + ", ")
+        if self.size() != 0:
+            s = s[:-2]
+        s += ")"
+        return s
 
 """
 Created on Thu Apr  6 20:01:51 2017
