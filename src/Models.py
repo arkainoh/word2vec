@@ -25,31 +25,42 @@ class CBOW:
         tokens = nltk.word_tokenize(inputstr)
         tokens = [i for i in tokens if i.isalpha()]
         self.voc.add(tokens)
-        self.words.append(tokens)
+        self.words += tokens
         self.V = self.voc.size()
 
-    def init_weights():
+    def init_weights(self):
         self.W_i = np.random.rand(self.V, self.N)
         self.W_o = np.random.rand(self.N, self.V)
     
     def train(self, learning_rate):
-        for i in range(self.V):
+        for i in range(len(self.words)):
 
-            # collect C words
-            # self.W_i[i] = avg(C words)
-
-            t = self.voc.vectorize(self.voc.at(i)) # target word
-
-            # h = self.W_i[i]
-            u = np.matmul(self.W_i[i], self.W_o)
-            y = Tools.softmax(u)
+            # training word
+            t = self.voc.vectorize(self.words[i])
             
+            # context words
+            context_start = max(0, int(i - self.C / 2))
+            context_end = min (len(self.words), int(i + self.C / 2 + 1))
+            context_sum = np.array([0 for v in range(self.N)], dtype = np.float64)
+            context_cnt = 0
+            for c in range(context_start, context_end):
+                if c != i:
+                    context_sum += self.W_i[self.voc.indexOf(self.words[c])]
+                    context_cnt += 1
+
+            h = context_sum / context_cnt
+
+            u = np.matmul(h, self.W_o)
+            y = Tools.softmax(u)
+            e = y - t
+
             # update W_o
             for j in range(self.V):
-                e = y - t
-                self.W_o[:, j] -= learning_rate * e[j] * self.W_i[i]
+                self.W_o[:, j] -= learning_rate * e[j] * h
             
             # update W_i
             EH = np.matmul(e, self.W_o.T)
-            self.W_i[i] -= learning_rate * EH
-
+            
+            for c in range(context_start, context_end):
+                if c != i:
+                    self.W_i[self.voc.indexOf(self.words[c])] -= learning_rate * EH / context_cnt
