@@ -15,9 +15,9 @@ class CBOW:
         if(voc is not None):
             self.voc.load(voc)
         self.sentences = []
-        self.E = 0
+        self.E = {}
 
-    def addTrainingData(self, filename):
+    def inputData(self, filename):
         inputstr = ""
         f = open(filename)
         lines = f.readlines()
@@ -30,7 +30,7 @@ class CBOW:
                     self.sentences.append(tokens)
                     self.voc.add(tokens)
 
-    def init_weights(self):
+    def initWeights(self):
         V = self.voc.size()
         self.W_i = np.random.rand(V, self.N)
         self.W_o = np.random.rand(self.N, V)
@@ -56,8 +56,7 @@ class CBOW:
                 u = np.matmul(h, self.W_o)
                 y = Tools.softmax(u)
                 e = y - t
-
-                self.E = math.log(np.exp(np.matmul(h, self.W_o)).sum(axis=0)) - np.dot(self.W_o[:, 3], h)
+                self.E[sentence[i]] = math.log(np.exp(np.matmul(h, self.W_o)).sum(axis=0)) - np.dot(h, self.W_o[:, self.voc.indexOf(sentence[i])])
 
                 # update W_o
                 for j in range(self.voc.size()):
@@ -69,6 +68,13 @@ class CBOW:
                 for c in range(context_start, context_end):
                     if c != i:
                         self.W_i[self.voc.indexOf(sentence[c])] -= (learning_rate * EH / context_cnt)
+
+    def similarTo(self, word):
+        idx = self.voc.indexOf(word)
+        l = [(self.voc.at(i), Tools.cosSimilarity(self.W_i[i], self.W_i[idx])) for i in range(self.voc.size()) if i != idx]
+        l = sorted(l, key = lambda x: x[1])
+        l.reverse()
+        return l
 
 '''
     def loss(self, idx):
