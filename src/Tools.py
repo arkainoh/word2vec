@@ -6,6 +6,13 @@ def softmax(vec):
     m = np.max(vec)
     return np.exp(vec - m) / np.exp(vec - m).sum(axis = 0)
 
+def cosSimilarity(A, B):
+    multi = (A.dot(B))
+    x = math.sqrt(A.dot(A))
+    y = math.sqrt(B.dot(B))
+    result = multi / (x * y)
+    return result
+
 # Set of vocabularies with indices
 class Vocabulary:
     def __init__(self):
