@@ -6,7 +6,9 @@ import math
 import re
 
 # implement CBOW, Skip-Gram
+
 class word2vec:
+
 
     def __init__(self, model, dimension, C, filename = '', hs = False, min_count = 0, stem = False):
         self.W_i = np.empty(0)
@@ -184,7 +186,6 @@ class word2vec:
                     if c != i:
                         self.W_i[self.voc.indexOf(sentence[c])] -= (learning_rate * EH / context_cnt)
 
-                
     def similarTo(self, word):
         if self.stem:
             stemmer = nltk.stem.porter.PorterStemmer()
@@ -194,6 +195,7 @@ class word2vec:
         l = sorted(l, key = lambda x: x[1])
         l.reverse()
         return l
+
 '''
     def loss(self):
         E = 0   
