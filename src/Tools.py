@@ -59,12 +59,14 @@ class Vocabulary:
         f = open(filename, 'w', encoding='utf-8')
         for word in self.vector:
             f.write(word + '\n')
+        f.close()
 
     def load(self, filename):
         f = open(filename, 'r', encoding='utf-8')
         lines = f.readlines()
         bow = [i[:-1] for i in lines]
         self.add(bow)
+        f.close()
 
     def __str__(self):
         s = "Vocabulary("
