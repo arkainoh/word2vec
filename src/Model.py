@@ -9,7 +9,6 @@ import re
 
 class word2vec:
 
-
     def __init__(self, model, dimension, C, filename = '', hs = False, min_count = 0, stem = False):
         self.W_i = np.empty(0)
         self.W_o = np.empty(0)
@@ -76,8 +75,6 @@ class word2vec:
             self.ht = Tools.HuffmanTree(self.N, self.freq)
         f.close()
         self.initWeights()
-        print(self.freq)
-        print(self.sentences)
 
     def initWeights(self):
         V = self.voc.size()
