@@ -98,8 +98,8 @@ class HuffmanTree:
         self.path = {}
         if(tokfreq):
             self.build(tokfreq)
-
-    def build(self, tokfreq): # build Huffman tree with given term frequencies
+       
+    def build(self, tokfreq):
         pq = []
         for key in tokfreq:
             pq.append(TreeNode(word=key, weight=tokfreq[key]))
@@ -111,16 +111,31 @@ class HuffmanTree:
             tmpL = heapq.heappop(pq)
             tmpP = TreeNode(data = np.random.rand(self.dimension), left = tmpL, right = tmpR, weight = tmpR.weight + tmpL.weight)
 
-            # this algorithm seems inefficient... it should be replaced later
-            for word in self.words(tmpR):
-                self.path[word].append(0)
-            for word in self.words(tmpL):
-                self.path[word].append(1)
-
             heapq.heappush(pq, tmpP)
         self.root = pq[0]
-        for key in self.path:
-            self.path[key].reverse()
+       
+        self.findPaths()    
+        
+    def findPaths(self):
+        path = []
+        stack = []
+        curNode = self.root
+        while(curNode):
+            if not curNode.word: # internal node
+                stack.append(curNode)
+                curNode = curNode.left
+                path.append(1)
+            else: # leaf node with its word
+                self.path[curNode.word] = list(path)
+                print(curNode.word + ": add " + str(path))
+                if not len(stack):
+                    curNode = None
+                else:
+                    curNode = stack.pop()
+                    while not path.pop():
+                        pass
+                    curNode = curNode.right
+                    path.append(0)
 
     def nodes(self, node = None): # inorder traversal
         l = []
