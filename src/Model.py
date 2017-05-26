@@ -9,7 +9,7 @@ import re
 
 class word2vec:
 
-    def __init__(self, model, dimension, C, filename = '', hs = True, min_count = 0, special_letters = False, tokenize = True, stopwords = False, stem = True):
+    def __init__(self, model, dimension, C, filename = '', hs = True, min_count = 0, lowercase = True, special_letters = False, tokenizer = True, stopwords = False, stemmer = True):
         self.W_i = np.empty(0)
         self.W_o = np.empty(0)
         self.N = dimension
@@ -21,10 +21,11 @@ class word2vec:
         self.ht = None
         self.model = 0 # 0: cbow, 1: skip-gram
         self.min_count = min_count
+        self.lowercase = lowercase
         self.special_letters = special_letters
-        self.tokenize = tokenize
+        self.tokenizer = tokenizer
         self.stopwords = stopwords
-        self.stem = stem
+        self.stemmer = stemmer
         if model is 'cbow':
             self.model = 0
         elif model is 'skipgram':
@@ -40,20 +41,22 @@ class word2vec:
         inputstr = ""
         words = []
         stpwrds = None
+        stemmer = None
         if not self.stopwords:
             stpwrds = set(stopwords.words('english'))
-        if self.stem:
+        if self.stemmer:
             stemmer = nltk.stem.porter.PorterStemmer()
         f = open(filename)
         lines = f.readlines()
         for line in lines:
-            line = line.lower()
+            if self.lowercase:
+                line = line.lower()
             for sentence in re.split('\.|\!|\?|;|:', line):
                 tmp = []
                 if not self.special_letters:
                     sentence = sentence.replace("'", " ")
                     sentence = sentence.replace("\"", " ")
-                if self.tokenize:
+                if self.tokenizer:
                     tmp = nltk.word_tokenize(sentence)
                 else:
                     tmp = sentence.split(' ')
@@ -65,9 +68,10 @@ class word2vec:
                     if not self.stopwords:
                         if token in stpwrds:
                             continue
-                    if self.stem:
+                    if self.stemmer:
                         token = stemmer.stem(token)
-                    tokens.append(token)
+                    if len(token):
+                        tokens.append(token)
 
                 if len(tokens) > 1:
                     self.sentences.append(tokens)
@@ -204,7 +208,7 @@ class word2vec:
                         self.W_i[self.voc.indexOf(sentence[c])] -= (learning_rate * EH / context_cnt)
 
     def similarTo(self, word):
-        if self.stem:
+        if self.stemmer:
             stemmer = nltk.stem.porter.PorterStemmer()
             word = stemmer.stem(word)
         idx = self.voc.indexOf(word)
@@ -213,6 +217,8 @@ class word2vec:
         l.reverse()
         return l
 
+    def vectorOf(self, word):
+        return self.W_i[self.voc.indexOf(word)]
 '''
     def loss(self):
         E = 0   
