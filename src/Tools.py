@@ -18,8 +18,7 @@ def cosSimilarity(A, B):
     result = multi / (x * y)
     return result
 
-def tokFreq(tokens):
-    dic = {}
+def tokFreq(tokens, dic = {}):
     for token in tokens:
         if token in dic:
             dic[token] += 1
@@ -127,7 +126,6 @@ class HuffmanTree:
                 path.append(1)
             else: # leaf node with its word
                 self.path[curNode.word] = list(path)
-                print(curNode.word + ": add " + str(path))
                 if not len(stack):
                     curNode = None
                 else:
