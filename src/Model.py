@@ -9,7 +9,7 @@ import re
 
 class word2vec:
 
-    def __init__(self, model, dimension, C, filename = '', hs = False, min_count = 0, stem = False):
+    def __init__(self, model, dimension, C, filename = '', hs = True, min_count = 0, special_letters = False, tokenize = True, stopwords = False, stem = True):
         self.W_i = np.empty(0)
         self.W_o = np.empty(0)
         self.N = dimension
@@ -21,6 +21,9 @@ class word2vec:
         self.ht = None
         self.model = 0 # 0: cbow, 1: skip-gram
         self.min_count = min_count
+        self.special_letters = special_letters
+        self.tokenize = tokenize
+        self.stopwords = stopwords
         self.stem = stem
         if model is 'cbow':
             self.model = 0
@@ -36,8 +39,9 @@ class word2vec:
     def inputData(self, filename): # preprocessing
         inputstr = ""
         words = []
-
-        stpwrds = set(stopwords.words('english'))
+        stpwrds = None
+        if not self.stopwords:
+            stpwrds = set(stopwords.words('english'))
         if self.stem:
             stemmer = nltk.stem.porter.PorterStemmer()
         f = open(filename)
@@ -45,16 +49,30 @@ class word2vec:
         for line in lines:
             line = line.lower()
             for sentence in re.split('\.|\!|\?|;|:', line):
-                tmp = nltk.word_tokenize(sentence)
+                tmp = []
+                if not self.special_letters:
+                    sentence = sentence.replace("'", " ")
+                    sentence = sentence.replace("\"", " ")
+                if self.tokenize:
+                    tmp = nltk.word_tokenize(sentence)
+                else:
+                    tmp = sentence.split(' ')
                 tokens = []
                 for token in tmp:
-                    if token.isalpha() and token not in stpwrds:
-                        if self.stem:
-                            token = stemmer.stem(token)
-                        tokens.append(token)
-                        words.append(token)
+                    if not self.special_letters:
+                        if not token.isalpha():
+                            continue
+                    if not self.stopwords:
+                        if token in stpwrds:
+                            continue
+                    if self.stem:
+                        token = stemmer.stem(token)
+                    tokens.append(token)
+
                 if len(tokens) > 1:
                     self.sentences.append(tokens)
+                    for token in tokens:
+                        words.append(token)
                     if self.min_count == 0:
                         self.voc.add(tokens)
 
@@ -63,12 +81,14 @@ class word2vec:
         if self.min_count > 0:
             tmp = self.sentences
             self.sentences = []
+            words = []
             for sentence in tmp:
                 sentence = [w for w in sentence if self.freq[w] >= self.min_count]
                 if len(sentence) > 1:
                     self.voc.add(sentence)
                     self.sentences.append(sentence)
-            words = [w for w in words if self.freq[w] >= self.min_count]
+                    for word in sentence:
+                        words.append(word)
             self.freq = Tools.tokFreq(words)
 
         if self.hs:
