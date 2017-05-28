@@ -31,7 +31,7 @@ class word2vec:
         elif model is 'skipgram':
             self.model = 1
         else:
-            print("<!> model should be either \'cbow\' or \'skipgram\'")
+            print("<ERROR> model should be either \'cbow\' or \'skipgram\'")
             raise ValueError
 
         if(filename):
@@ -219,6 +219,46 @@ class word2vec:
 
     def vectorOf(self, word):
         return self.W_i[self.voc.indexOf(word)]
+
+    def recommend(self, contextwords=[]):
+        if not len(contextwords):
+            print("<ERROR> The number of context words should not be 0")
+            raise ValueError
+            return None
+
+        result = []
+        context_sum = np.array([0 for v in range(self.N)], dtype = np.float64)
+        context_cnt = 0
+
+        for word in contextwords:
+            context_sum += self.W_i[self.voc.indexOf(word)]
+            context_cnt += 1
+
+        h = context_sum / context_cnt
+
+        if self.hs:
+            for i in range(self.voc.size()):
+                p_w = 1
+                curNode = self.ht.root
+                j = 0
+                while not curNode.word:
+                    if self.ht.t(self.voc.at(i), j):
+                        p_w *= Tools.sigmoid(np.dot(curNode.data, h))
+                        curNode = curNode.left
+                    else:
+                        p_w *= Tools.sigmoid(-np.dot(curNode.data, h))
+                        curNode = curNode.right
+                    j += 1
+                result.append((self.voc.at(i), p_w))
+        else:
+            u = np.matmul(h, self.W_o)
+            y = Tools.softmax(u)
+            result = [(self.voc.at(i), y[i]) for i in range(self.voc.size())]
+
+        result = sorted(result, key = lambda x: x[1])
+        result.reverse()
+        return result
+        
 '''
     def loss(self):
         E = 0   
