@@ -9,7 +9,10 @@ import re
 
 class word2vec:
 
-    def __init__(self, model, dimension, C, filename = '', hs = True, min_count = 0, lowercase = True, special_letters = False, tokenizer = True, stopwords = False, stemmer = True):
+    def __init__(self, model, dimension, C, filename = '',
+        hs = True, min_count = 0,
+        lowercase = True, special_letters = False, tokenizer = True, stopwords = False, stemmer = True):
+    
         self.W_i = np.empty(0)
         self.W_o = np.empty(0)
         self.N = dimension
@@ -220,7 +223,39 @@ class word2vec:
     def vectorOf(self, word):
         return self.W_i[self.voc.indexOf(word)]
 
-    def recommend(self, contextwords=[]):
+    def probabilityOf(self, word, contextwords = []):
+        if not len(contextwords):
+            print("<ERROR> The number of context words should not be 0")
+            raise ValueError
+            return None
+        idx = self.voc.indexOf(word)
+        context_sum = np.array([0 for v in range(self.N)], dtype = np.float64)
+        context_cnt = 0
+
+        for word in contextwords:
+            context_sum += self.W_i[self.voc.indexOf(word)]
+            context_cnt += 1
+
+        h = context_sum / context_cnt
+        if self.hs:
+            p_w = 1
+            curNode = self.ht.root
+            j = 0
+            while not curNode.word:
+                if self.ht.t(self.voc.at(idx), j):
+                    p_w *= Tools.sigmoid(np.dot(curNode.data, h))
+                    curNode = curNode.left
+                else:
+                    p_w *= Tools.sigmoid(-np.dot(curNode.data, h))
+                    curNode = curNode.right
+                j += 1
+        else:
+            u = np.matmul(h, self.W_o)
+            y = Tools.softmax(u)
+            p_w = y[idx]
+        return p_w
+
+    def recommend(self, contextwords = []):
         if not len(contextwords):
             print("<ERROR> The number of context words should not be 0")
             raise ValueError
@@ -258,7 +293,112 @@ class word2vec:
         result = sorted(result, key = lambda x: x[1])
         result.reverse()
         return result
-        
+
+    def multiRecommend(self, num, left_contextwords, right_contextwords):
+        if (not len(left_contextwords)) and (not len(right_contextwords)):
+            print("<ERROR> The number of context words should not be 0")
+            raise ValueError
+            return None
+
+        if num < 1 or num > 4:
+            print("<ERROR> The number of code should range from 1 to 4")
+            raise ValueError
+            return None
+
+        result = []
+
+        if num == 1:
+            result = self.recommend(left_contextwords + right_contextwords)[:10]
+            result = [item for item in result if item[1] > 0.1]
+            for item in result:
+                similar_word = self.similarTo(item[0])[0][0]
+                contain = False
+                for element in result:
+                    if similar_word in element:
+                        contain = True
+                        break
+                if not contain:
+                    result.append((similar_word, self.probabilityOf(similar_word, left_contextwords + right_contextwords)))
+                
+            result = sorted(result, key = lambda x: x[1])
+            result.reverse()
+            return result
+
+        leftmost = []
+        rightmost = []
+        if num == 2:
+            leftmost = self.recommend(left_contextwords + [right_contextwords[0]])[:10]
+            rightmost = self.recommend([left_contextwords[1]] + right_contextwords)[:10]
+        else:
+            leftmost = self.recommend(left_contextwords)[:10]
+            rightmost = self.recommend(right_contextwords)[:10]
+
+        leftmost = [item for item in leftmost if item[1] > 0.1]
+        rightmost = [item for item in rightmost if item[1] > 0.1]
+
+        for item in leftmost:
+                similar_word = self.similarTo(item[0])[0][0]
+                contain = False
+                for element in leftmost:
+                    if similar_word in element:
+                        contain = True
+                        break
+                if not contain:
+                    if num == 2:
+                        leftmost.append((similar_word, self.probabilityOf(similar_word, left_contextwords + [right_contextwords[0]])))
+                    else:
+                        leftmost.append((similar_word, self.probabilityOf(similar_word, left_contextwords)))
+
+        for item in rightmost:
+                similar_element = self.similarTo(item[0])[0][0]
+                contain = False
+                for element in rightmost:
+                    if similar_word in element:
+                        contain = True
+                        break
+                if not contain:
+                    if num == 2:
+                        rightmost.append((similar_word, self.probabilityOf(similar_word, [left_contextwords[1]] + right_contextwords)))
+                    else:
+                        rightmost.append((similar_word, self.probabilityOf(similar_word, right_contextwords)))
+
+        if num == 2:
+            for i in leftmost:
+                for j in rightmost:
+                    codes = []
+                    codes.append(i[0])
+                    codes.append(j[0])
+                    result.append((codes, i[1] * j[1]))
+            result = sorted(result, key = lambda x: x[1])
+            result.reverse()
+            return result
+
+        remainingNum = num - 2
+
+        for i in leftmost:
+            for j in rightmost:
+                left_codes = []
+                right_codes = []
+                left_codes.append(left_contextwords[1])
+                left_codes.append(i[0])
+                right_codes.append(right_contextwords[0])
+                right_codes.append(j[0])
+                
+                center = self.multiRecommend(remainingNum, left_codes, right_codes)
+                for item in center:
+                    codes = []
+                    codes.append(i[0])
+                    if remainingNum == 2:
+                        codes = codes + item[0]
+                    else:
+                        codes.append(item[0])
+                    codes.append(j[0])
+                    result.append((codes, i[1] * j[1] * item[1]))
+
+        result = sorted(result, key = lambda x: x[1])
+        result.reverse()
+        return result[:10]
+
 '''
     def loss(self):
         E = 0   
