@@ -108,7 +108,7 @@ class HuffmanTree:
         while(len(pq) >= 2):
             tmpR = heapq.heappop(pq)
             tmpL = heapq.heappop(pq)
-            tmpP = TreeNode(data = np.random.rand(self.dimension), left = tmpL, right = tmpR, weight = tmpR.weight + tmpL.weight)
+            tmpP = TreeNode(data = np.random.uniform(-0.1, 0.1, self.dimension), left = tmpL, right = tmpR, weight = tmpR.weight + tmpL.weight)
 
             heapq.heappush(pq, tmpP)
         self.root = pq[0]
