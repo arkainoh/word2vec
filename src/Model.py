@@ -105,9 +105,50 @@ class word2vec:
 
     def initWeights(self):
         V = self.voc.size()
-        self.W_i = np.random.rand(V, self.N)
+        N = int(self.N)
+        self.W_i = np.random.uniform(-0.01, 0.01, [V, N])
         if not self.hs:
-            self.W_o = np.random.rand(self.N, V)
+            self.W_o = np.random.uniform(-0.01, 0.01, [N, V])
+
+    def saveModel(self, vocabulary, wi, wo):
+        self.voc.save(vocabulary)
+        if self.hs:
+            print('not implemented')
+        else:
+            wi_shape = self.W_i.shape
+            f = open(wi, 'w')
+            f.write('# ' + str(wi_shape[0]) + ' ' + str(wi_shape[1]) + '\n')
+            f.close()
+            f = open(wi, 'ab')
+            np.savetxt(f, self.W_i)
+            f.close()
+
+            wo_shape = self.W_o.shape
+            f = open(wo, 'w')
+            f.write('# ' + str(wo_shape[0]) + ' ' + str(wo_shape[1]) + '\n')
+            f.close()
+            f = open(wo, 'ab')
+            np.savetxt(f, self.W_o)
+            f.close()
+
+    def loadModel(self, vocabulary, wi, wo):
+        self.voc.load(vocabulary)
+        if self.hs:
+            print('not implemented')
+        else:
+            self.W_i = np.loadtxt(wi, dtype = np.float32)
+            f = open(wi, 'r')
+            lines = f.readlines()
+            # wi_shape = lines[0].split(' ')
+            # wi_shape = [i for i in wi_shape if i.isdigit()]
+
+            self.W_o = np.loadtxt(wo, dtype = np.float32)
+            f = open(wo, 'r')
+            lines = f.readlines()
+            wo_shape = lines[0].split(' ')
+            wo_shape = [i for i in wo_shape if i.isdigit()]
+
+            self.N = int(wo_shape[0])
 
     def train(self, learning_rate):
         if self.model:
@@ -124,7 +165,7 @@ class word2vec:
 
                 h = self.W_i[self.voc.indexOf(sentence[i])]
 
-                EH = np.array([0 for v in range(self.N)], dtype = np.float64)
+                EH = np.array([0 for v in range(self.N)], dtype = np.float32)
 
                 if self.hs:
                     for c in range(context_start, context_end):
@@ -144,7 +185,7 @@ class word2vec:
                     y = Tools.softmax(u)
 
                     # e = y - t
-                    EI = np.array([0 for v in range(self.voc.size())], dtype = np.float64)
+                    EI = np.array([0 for v in range(self.voc.size())], dtype = np.float32)
                     
                     context_cnt = 0
                     for c in range(context_start, context_end):
@@ -167,7 +208,7 @@ class word2vec:
                 # context words
                 context_start = max(0, int(i - self.C / 2))
                 context_end = min(len(sentence), int(i + self.C / 2 + 1))
-                context_sum = np.array([0 for v in range(self.N)], dtype = np.float64)
+                context_sum = np.array([0 for v in range(self.N)], dtype = np.float32)
                 context_cnt = 0
                 
                 for c in range(context_start, context_end):
@@ -178,7 +219,7 @@ class word2vec:
 
                 # self.E[sentence[i]] = math.log(np.exp(np.matmul(h, self.W_o)).sum(axis=0)) - np.dot(h, self.W_o[:, self.voc.indexOf(sentence[i])])
                 
-                EH = np.array([0 for v in range(self.N)], dtype = np.float64)
+                EH = np.array([0 for v in range(self.N)], dtype = np.float32)
 
                 # update Weights
                 if self.hs:
@@ -229,7 +270,7 @@ class word2vec:
             raise ValueError
             return None
         idx = self.voc.indexOf(word)
-        context_sum = np.array([0 for v in range(self.N)], dtype = np.float64)
+        context_sum = np.array([0 for v in range(self.N)], dtype = np.float32)
         context_cnt = 0
 
         for word in contextwords:
@@ -262,7 +303,7 @@ class word2vec:
             return None
 
         result = []
-        context_sum = np.array([0 for v in range(self.N)], dtype = np.float64)
+        context_sum = np.array([0 for v in range(self.N)], dtype=np.float32)
         context_cnt = 0
 
         for word in contextwords:
@@ -319,7 +360,7 @@ class word2vec:
                         break
                 if not contain:
                     result.append((similar_word, self.probabilityOf(similar_word, left_contextwords + right_contextwords)))
-                
+
             result = sorted(result, key = lambda x: x[1])
             result.reverse()
             return result
@@ -328,7 +369,7 @@ class word2vec:
         rightmost = []
         if num == 2:
             leftmost = self.recommend(left_contextwords + [right_contextwords[0]])[:10]
-            rightmost = self.recommend([left_contextwords[1]] + right_contextwords)[:10]
+            rightmost = self.recommend([left_contextwords[-1]] + right_contextwords)[:10]
         else:
             leftmost = self.recommend(left_contextwords)[:10]
             rightmost = self.recommend(right_contextwords)[:10]
@@ -358,7 +399,7 @@ class word2vec:
                         break
                 if not contain:
                     if num == 2:
-                        rightmost.append((similar_word, self.probabilityOf(similar_word, [left_contextwords[1]] + right_contextwords)))
+                        rightmost.append((similar_word, self.probabilityOf(similar_word, [left_contextwords[-1]] + right_contextwords)))
                     else:
                         rightmost.append((similar_word, self.probabilityOf(similar_word, right_contextwords)))
 
@@ -379,7 +420,7 @@ class word2vec:
             for j in rightmost:
                 left_codes = []
                 right_codes = []
-                left_codes.append(left_contextwords[1])
+                left_codes.append(left_contextwords[-1])
                 left_codes.append(i[0])
                 right_codes.append(right_contextwords[0])
                 right_codes.append(j[0])
@@ -406,7 +447,7 @@ class word2vec:
             for idx in range(len(sentence)):
                 context_start = max(0, int(idx - self.C / 2))
                 context_end = min(len(sentence), int(idx + self.C / 2 + 1))
-                context_sum = np.array([0 for v in range(self.N)], dtype = np.float64)
+                context_sum = np.array([0 for v in range(self.N)], dtype = np.float32)
                 context_cnt = 0
                 for c in range(context_start, context_end):
                     if c != idx:
